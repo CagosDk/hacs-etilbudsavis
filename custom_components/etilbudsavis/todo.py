@@ -1,4 +1,4 @@
-"""eTilbudsavis todo list entity."""
+"""eTilbudsavis todo list entities."""
 from __future__ import annotations
 
 from homeassistant.components.todo import (
@@ -17,33 +17,33 @@ from .coordinator import EtilbudsavisCoordinator
 
 
 def _encode_uid(item: dict) -> str:
-    """Encode both integer id and clientId in uid field."""
     return f"{item['id']}|{item.get('clientId', '')}"
 
 
 def _decode_uid(uid: str) -> tuple[int, str]:
-    """Decode uid back to (integer_id, client_id)."""
     parts = uid.split("|", 1)
     return int(parts[0]), parts[1] if len(parts) > 1 else ""
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    coordinator: EtilbudsavisCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([EtilbudsavisTodoList(coordinator, entry)])
+    """Set up one todo entity per shopping list."""
+    coordinators: dict[int, EtilbudsavisCoordinator] = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities([EtilbudsavisTodoList(coord) for coord in coordinators.values()])
 
 
 class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListEntity):
+    """One eTilbudsavis shopping list as a HA todo entity."""
+
     _attr_supported_features = (
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.DELETE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
     )
 
-    def __init__(self, coordinator: EtilbudsavisCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: EtilbudsavisCoordinator) -> None:
         super().__init__(coordinator)
-        self._entry = entry
         self._attr_unique_id = f"etilbudsavis_{coordinator.shopping_list_id}"
-        self._attr_name = "eTilbudsavis indkøbsliste"
+        self._attr_name = coordinator.list_name or f"eTilbudsavis {coordinator.shopping_list_id}"
 
     @property
     def todo_items(self) -> list[TodoItem]:
@@ -55,14 +55,12 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
             ticked = item.get("ticked", False)
             status = TodoItemStatus.COMPLETED if ticked else TodoItemStatus.NEEDS_ACTION
             store = (item.get("business") or {}).get("name")
-            description = store if store else None
             result.append(TodoItem(
                 uid=_encode_uid(item),
                 summary=item.get("name", ""),
                 status=status,
-                description=description,
+                description=store,
             ))
-        # Ikke-tikkede øverst, tikkede nederst — begge grupper alfabetisk
         result.sort(key=lambda x: (x.status == TodoItemStatus.COMPLETED, x.summary.lower()))
         return result
 
