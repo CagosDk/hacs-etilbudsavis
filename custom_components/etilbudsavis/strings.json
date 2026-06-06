@@ -23,6 +23,13 @@
           "shopping_list_id": "Indkøbsliste-ID",
           "list_name": "Listenavn"
         }
+      },
+      "reauth_confirm": {
+        "title": "Log ind på eTilbudsavis igen",
+        "description": "Din session er udløbet. Indtast den 6-cifrede kode sendt til {email}.",
+        "data": {
+          "otp": "Engangskode"
+        }
       }
     },
     "error": {
@@ -32,8 +39,10 @@
       "unknown": "Ukendt fejl — tjek Home Assistant-loggen."
     },
     "abort": {
-      "already_configured": "eTilbudsavis er allerede konfigureret.",
-      "updated_existing": "Indkøbslisten er tilføjet og Home Assistant opdaterer inden for et øjeblik."
+      "updated_existing": "Indkøbslisten er tilføjet og Home Assistant opdaterer inden for et øjeblik.",
+      "reauth_successful": "Du er nu logget ind igen.",
+      "cannot_connect": "Kunne ikke oprette forbindelse til eTilbudsavis.",
+      "unknown": "Ukendt fejl — tjek Home Assistant-loggen."
     }
   }
 }

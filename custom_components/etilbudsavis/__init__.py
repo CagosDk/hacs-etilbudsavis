@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, CONF_TOKEN, CONF_LISTS, CONF_SHOPPING_LIST_ID
+from .const import DOMAIN, CONF_LISTS, CONF_SHOPPING_LIST_ID
 from .coordinator import EtilbudsavisCoordinator
 
 PLATFORMS = [Platform.TODO]
@@ -13,8 +13,6 @@ PLATFORMS = [Platform.TODO]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up eTilbudsavis from a config entry."""
-    token = entry.data[CONF_TOKEN]
-
     # Support both old format (single list) and new format (multiple lists)
     shopping_lists = entry.data.get(CONF_LISTS)
     if not shopping_lists:
@@ -29,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for sl in shopping_lists:
         coordinator = EtilbudsavisCoordinator(
             hass=hass,
-            token=token,
+            entry=entry,
             shopping_list_id=sl["id"],
             list_name=sl.get("name", f"Liste {sl['id']}"),
         )

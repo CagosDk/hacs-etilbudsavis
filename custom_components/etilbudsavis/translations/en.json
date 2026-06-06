@@ -16,24 +16,33 @@
         }
       },
       "select_lists": {
-        "title": "Vælg indkøbsliste(r)",
-        "description": "Vælg en eller flere lister du vil synkronisere med Home Assistant.",
+        "title": "Select shopping list(s)",
+        "description": "Select one or more lists to synchronise with Home Assistant.",
         "data": {
-          "shopping_lists": "Indkøbslister",
-          "shopping_list_id": "Indkøbsliste-ID",
-          "list_name": "Listenavn"
+          "shopping_lists": "Shopping lists",
+          "shopping_list_id": "Shopping list ID",
+          "list_name": "List name"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with eTilbudsavis",
+        "description": "Your session has expired. Enter the 6-digit code sent to {email}.",
+        "data": {
+          "otp": "One-time code"
         }
       }
     },
     "error": {
-      "cannot_connect": "Kunne ikke oprette forbindelse til eTilbudsavis.",
-      "invalid_otp": "Forkert kode — tjek din e-mail og prøv igen.",
-      "no_list_selected": "Vælg mindst én liste.",
-      "unknown": "Ukendt fejl — tjek Home Assistant-loggen."
+      "cannot_connect": "Could not connect to eTilbudsavis.",
+      "invalid_otp": "Wrong code — check your email and try again.",
+      "no_list_selected": "Please select at least one list.",
+      "unknown": "Unknown error — check the Home Assistant log."
     },
     "abort": {
-      "already_configured": "eTilbudsavis er allerede konfigureret.",
-      "updated_existing": "Indkøbslisten er tilføjet og Home Assistant opdaterer inden for et øjeblik."
+      "updated_existing": "The shopping list has been added and Home Assistant will update shortly.",
+      "reauth_successful": "You are now logged in again.",
+      "cannot_connect": "Could not connect to eTilbudsavis.",
+      "unknown": "Unknown error — check the Home Assistant log."
     }
   }
 }

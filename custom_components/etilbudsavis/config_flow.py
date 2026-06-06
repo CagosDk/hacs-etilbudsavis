@@ -137,6 +137,44 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reauth(self, entry_data) -> config_entries.FlowResult:
+        """Token udløbet — send ny OTP og bed brugeren bekræfte."""
+        self._email = entry_data.get(CONF_EMAIL, "")
+        client = EtilbudsavisClient(async_get_clientsession(self.hass))
+        try:
+            self._otp_id = await client.auth_initialize(self._email)
+        except EtilbudsavisAuthError:
+            return self.async_abort(reason="cannot_connect")
+        except Exception as e:
+            _LOGGER.exception("Fejl ved re-auth OTP-initialisering: %s", e)
+            return self.async_abort(reason="unknown")
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input=None) -> config_entries.FlowResult:
+        errors = {}
+        if user_input:
+            client = EtilbudsavisClient(async_get_clientsession(self.hass))
+            try:
+                self._token = await client.auth_finalize(self._otp_id, user_input["otp"].strip())
+            except EtilbudsavisAuthError:
+                errors["base"] = "invalid_otp"
+            except Exception as e:
+                _LOGGER.exception("Fejl ved re-auth OTP-bekræftelse: %s", e)
+                errors["base"] = "unknown"
+            else:
+                entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+                self.hass.config_entries.async_update_entry(
+                    entry, data={**entry.data, CONF_TOKEN: self._token}
+                )
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required("otp"): str}),
+            description_placeholders={"email": self._email},
+            errors=errors,
+        )
+
     async def _async_create_entry(self, shopping_lists: list[dict]):
         existing = [
             e for e in self.hass.config_entries.async_entries(DOMAIN)
