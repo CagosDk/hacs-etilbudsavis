@@ -86,16 +86,19 @@ class EtilbudsavisClient:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to remove item: {resp.status}")
 
-    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool) -> None:
+    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool, name: str | None = None) -> None:
         _now = datetime.now(timezone.utc)
         updated_at = _now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{_now.microsecond // 1000:03d}Z"
+        item: dict = {
+            "clientId": client_id,
+            "ticked": ticked,
+            "updatedAt": updated_at,
+        }
+        if name is not None:
+            item["name"] = name
         payload = {
             "shoppingListId": shopping_list_id,
-            "item": {
-                "clientId": client_id,
-                "ticked": ticked,
-                "updatedAt": updated_at,
-            },
+            "item": item,
         }
         async with self._session.post(f"{BASE_URL}/api/shopping-list-update-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:

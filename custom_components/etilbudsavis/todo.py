@@ -81,5 +81,6 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
             self.coordinator.shopping_list_id,
             client_id=client_id,
             ticked=ticked,
+            name=item.summary,
         )
         await self.coordinator.async_request_refresh()
