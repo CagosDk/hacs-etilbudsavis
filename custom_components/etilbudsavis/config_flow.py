@@ -20,8 +20,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle the config flow for eTilbudsavis."""
-
     VERSION = 2
 
     def __init__(self) -> None:
@@ -80,7 +78,6 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_select_lists(self, user_input=None):
         errors = {}
-        # Fetch available lists if not already done
         if not self._available_lists:
             try:
                 client = EtilbudsavisClient(async_get_clientsession(self.hass), self._token)
@@ -107,7 +104,7 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     selected_ids = [selected_ids]
                 selected = [sl for sl in self._available_lists if str(sl["id"]) in selected_ids]
                 if selected:
-                    return self._create_entry(selected)
+                    return await self._async_create_entry(selected)
                 errors["base"] = "no_list_selected"
             return self.async_show_form(
                 step_id="select_lists",
@@ -128,7 +125,7 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 list_id = int(user_input["shopping_list_id"])
                 list_name = (user_input.get("list_name") or f"Liste {list_id}").strip()
-                return self._create_entry([{"id": list_id, "name": list_name}])
+                return await self._async_create_entry([{"id": list_id, "name": list_name}])
             except (ValueError, TypeError):
                 errors["shopping_list_id"] = "unknown"
         return self.async_show_form(
@@ -140,7 +137,7 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    def _create_entry(self, shopping_lists: list[dict]):
+    async def _async_create_entry(self, shopping_lists: list[dict]):
         existing = [
             e for e in self.hass.config_entries.async_entries(DOMAIN)
             if e.data.get(CONF_EMAIL) == self._email
@@ -152,6 +149,10 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.hass.config_entries.async_update_entry(
                 entry,
                 data={**entry.data, CONF_LISTS: current, CONF_TOKEN: self._token},
+            )
+            # Reload the entry so new entities are created immediately
+            self.hass.async_create_task(
+                self.hass.config_entries.async_reload(entry.entry_id)
             )
             return self.async_abort(reason="updated_existing")
         return self.async_create_entry(
