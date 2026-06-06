@@ -5,6 +5,7 @@ import base64
 import json
 import uuid
 import urllib.parse
+from datetime import datetime, timezone
 from typing import Any
 
 import aiohttp
@@ -14,16 +15,14 @@ BASE_URL = "https://etilbudsavis.dk"
 
 
 class EtilbudsavisAuthError(Exception):
-    """Raised when authentication fails."""
+    pass
 
 
 class EtilbudsavisApiError(Exception):
-    """Raised when an API call fails."""
+    pass
 
 
 class EtilbudsavisClient:
-    """Async API client for eTilbudsavis."""
-
     def __init__(self, session: aiohttp.ClientSession, token: str | None = None) -> None:
         self._session = session
         self._token = token
@@ -38,31 +37,20 @@ class EtilbudsavisClient:
             "user-agent": "Mozilla/5.0 (compatible; HomeAssistant/eTilbudsavis)",
         }
         if self._token:
-            cookie_value = urllib.parse.quote(json.dumps({"token": self._token}))
+            cookie_value = urllib.parse.quote(json.dumps({"token": self._token}, separators=(",", ":")))
             headers["Cookie"] = f"tjek-session={cookie_value}"
         return headers
 
-    # --- Auth ---
-
     async def auth_initialize(self, email: str) -> str:
         payload = {"apiKey": API_KEY, "email": email}
-        async with self._session.post(
-            f"{BASE_URL}/api/auth-otp-initialize",
-            json=payload,
-            headers=self._headers,
-        ) as resp:
+        async with self._session.post(f"{BASE_URL}/api/auth-otp-initialize", json=payload, headers=self._headers) as resp:
             if resp.status != 200:
                 raise EtilbudsavisAuthError(f"Failed to initialize OTP: {resp.status}")
-            data = await resp.json()
-            return data["otpId"]
+            return (await resp.json())["otpId"]
 
     async def auth_finalize(self, otp_id: str, otp: str) -> str:
         payload = {"apiKey": API_KEY, "otpId": otp_id, "otp": otp}
-        async with self._session.post(
-            f"{BASE_URL}/api/auth-otp-finalize",
-            json=payload,
-            headers=self._headers,
-        ) as resp:
+        async with self._session.post(f"{BASE_URL}/api/auth-otp-finalize", json=payload, headers=self._headers) as resp:
             if resp.status != 200:
                 raise EtilbudsavisAuthError(f"Invalid OTP: {resp.status}")
             data = await resp.json()
@@ -71,8 +59,6 @@ class EtilbudsavisClient:
                 raise EtilbudsavisAuthError("No token in response")
             self._token = token
             return token
-
-    # --- Shopping list ---
 
     async def get_shopping_lists(self) -> list[dict]:
         key = self._make_key("shoppingLists", {})
@@ -87,60 +73,40 @@ class EtilbudsavisClient:
     async def add_item(self, shopping_list_id: int, name: str, count: int = 1) -> dict:
         payload = {
             "shoppingListId": shopping_list_id,
-            "item": {
-                "clientId": str(uuid.uuid4()),
-                "name": name,
-                "count": count,
-            },
+            "item": {"clientId": str(uuid.uuid4()), "name": name, "count": count},
         }
-        async with self._session.post(
-            f"{BASE_URL}/api/shopping-list-add-item",
-            json=payload,
-            headers=self._headers,
-        ) as resp:
+        async with self._session.post(f"{BASE_URL}/api/shopping-list-add-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to add item: {resp.status}")
             return await resp.json()
 
     async def remove_item(self, shopping_list_id: int, item_id: int) -> None:
-        payload = {
-            "shoppingListId": shopping_list_id,
-            "itemId": item_id,
-        }
-        async with self._session.post(
-            f"{BASE_URL}/api/shopping-list-remove-item",
-            json=payload,
-            headers=self._headers,
-        ) as resp:
+        payload = {"shoppingListId": shopping_list_id, "itemId": item_id}
+        async with self._session.post(f"{BASE_URL}/api/shopping-list-remove-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to remove item: {resp.status}")
 
-    async def tick_item(self, shopping_list_id: int, item_id: int, ticked: bool) -> None:
+    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool) -> None:
+        """Tick/untick an item using clientId (UUID) and the update endpoint."""
+        updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") +                      f"{datetime.now(timezone.utc).microsecond // 1000:03d}Z"
         payload = {
             "shoppingListId": shopping_list_id,
-            "itemId": item_id,
-            "ticked": ticked,
+            "item": {
+                "clientId": client_id,
+                "ticked": ticked,
+                "updatedAt": updated_at,
+            },
         }
-        async with self._session.post(
-            f"{BASE_URL}/api/shopping-list-tick-item",
-            json=payload,
-            headers=self._headers,
-        ) as resp:
+        async with self._session.post(f"{BASE_URL}/api/shopping-list-update-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to tick item: {resp.status}")
-
-    # --- Helpers ---
 
     def _make_key(self, query_name: str, params: dict) -> str:
         payload = json.dumps([query_name, params], separators=(",", ":"))
         return base64.b64encode(payload.encode()).decode()
 
     async def _rpc(self, keys: list[str]) -> list[dict[str, Any]]:
-        async with self._session.post(
-            f"{BASE_URL}/",
-            json={"data": keys},
-            headers=self._headers,
-        ) as resp:
+        async with self._session.post(f"{BASE_URL}/", json={"data": keys}, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"RPC failed: {resp.status}")
             data = await resp.json()
