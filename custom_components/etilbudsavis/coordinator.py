@@ -1,0 +1,47 @@
+"""Data coordinator for eTilbudsavis."""
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+from .api import EtilbudsavisClient, EtilbudsavisApiError
+from .const import DOMAIN, SCAN_INTERVAL_MINUTES
+
+_LOGGER = logging.getLogger(__name__)
+
+
+class EtilbudsavisCoordinator(DataUpdateCoordinator):
+    """Coordinator that fetches shopping list items periodically."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        token: str,
+        shopping_list_id: int,
+    ) -> None:
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(minutes=SCAN_INTERVAL_MINUTES),
+        )
+        self.shopping_list_id = shopping_list_id
+        self._client = EtilbudsavisClient(
+            session=async_get_clientsession(hass),
+            token=token,
+        )
+
+    @property
+    def client(self) -> EtilbudsavisClient:
+        return self._client
+
+    async def _async_update_data(self) -> list[dict]:
+        """Fetch current shopping list items."""
+        try:
+            return await self._client.get_shopping_list_items(self.shopping_list_id)
+        except EtilbudsavisApiError as err:
+            raise UpdateFailed(f"Error fetching eTilbudsavis data: {err}") from err
