@@ -6,7 +6,7 @@
   "issue_tracker": "https://github.com/CagosDk/hacs-etilbudsavis/issues",
   "dependencies": [],
   "codeowners": ["@CagosDk"],
-  "requirements": ["aiohttp>=3.9.0"],
+  "requirements": [],
   "iot_class": "cloud_polling",
   "config_flow": true
 }

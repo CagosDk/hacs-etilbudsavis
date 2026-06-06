@@ -63,12 +63,12 @@ class EtilbudsavisClient:
     async def get_shopping_lists(self) -> list[dict]:
         key = self._make_key("shoppingLists", {})
         data = await self._rpc([key])
-        return data[0].get("value", [])
+        return data[0].get("value", []) if data else []
 
     async def get_shopping_list_items(self, shopping_list_id: int) -> list[dict]:
         key = self._make_key("shoppingListItems", {"shoppingListId": shopping_list_id})
         data = await self._rpc([key])
-        return data[0].get("value", [])
+        return data[0].get("value", []) if data else []
 
     async def add_item(self, shopping_list_id: int, name: str, count: int = 1) -> dict:
         payload = {
@@ -87,8 +87,8 @@ class EtilbudsavisClient:
                 raise EtilbudsavisApiError(f"Failed to remove item: {resp.status}")
 
     async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool) -> None:
-        """Tick/untick an item using clientId (UUID) and the update endpoint."""
-        updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") +                      f"{datetime.now(timezone.utc).microsecond // 1000:03d}Z"
+        _now = datetime.now(timezone.utc)
+        updated_at = _now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{_now.microsecond // 1000:03d}Z"
         payload = {
             "shoppingListId": shopping_list_id,
             "item": {
@@ -107,6 +107,8 @@ class EtilbudsavisClient:
 
     async def _rpc(self, keys: list[str]) -> list[dict[str, Any]]:
         async with self._session.post(f"{BASE_URL}/", json={"data": keys}, headers=self._headers) as resp:
+            if resp.status == 401:
+                raise EtilbudsavisAuthError("Token udløbet eller ugyldigt")
             if not resp.ok:
                 raise EtilbudsavisApiError(f"RPC failed: {resp.status}")
             data = await resp.json()

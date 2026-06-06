@@ -27,9 +27,7 @@ Synkroniser din [eTilbudsavis](https://etilbudsavis.dk) indkøbsliste med Home A
 2. Søg efter **eTilbudsavis**
 3. Indtast din e-mailadresse — du modtager en 6-cifret engangskode
 4. Indtast koden fra din e-mail
-5. Vælg eller indtast dit indkøbsliste-ID
-
-> **Find dit liste-ID:** Gå til etilbudsavis.dk/indkoebslister/aktiv, åbn DevTools (F12 → Network), opdater siden og find POST-kaldet til etilbudsavis.dk/ — kig efter `shoppingListId` i response-data.
+5. Vælg hvilke indkøbslister du vil synkronisere
 
 ## Bemærk
 
