@@ -75,37 +75,11 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
         await self.coordinator.async_request_refresh()
 
     async def async_update_todo_item(self, item: TodoItem) -> None:
-        item_id, client_id = _decode_uid(item.uid)
+        _, client_id = _decode_uid(item.uid)
         ticked = item.status == TodoItemStatus.COMPLETED
-
-        current = next(
-            (i for i in (self.coordinator.data or []) if i.get("id") == item_id),
-            None,
+        await self.coordinator.client.tick_item(
+            self.coordinator.shopping_list_id,
+            client_id=client_id,
+            ticked=ticked,
         )
-        name_changed = bool(
-            current and item.summary and item.summary != current.get("name", "")
-        )
-
-        if name_changed:
-            await self.coordinator.client.remove_item(
-                self.coordinator.shopping_list_id, item_id=item_id
-            )
-            new_item = await self.coordinator.client.add_item(
-                self.coordinator.shopping_list_id, name=item.summary
-            )
-            if ticked:
-                new_client_id = new_item.get("clientId", "")
-                if new_client_id:
-                    await self.coordinator.client.tick_item(
-                        self.coordinator.shopping_list_id,
-                        client_id=new_client_id,
-                        ticked=True,
-                    )
-        else:
-            await self.coordinator.client.tick_item(
-                self.coordinator.shopping_list_id,
-                client_id=client_id,
-                ticked=ticked,
-            )
-
         await self.coordinator.async_request_refresh()

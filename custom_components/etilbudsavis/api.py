@@ -71,18 +71,14 @@ class EtilbudsavisClient:
         return data[0].get("value", []) if data else []
 
     async def add_item(self, shopping_list_id: int, name: str, count: int = 1) -> dict:
-        client_id = str(uuid.uuid4())
         payload = {
             "shoppingListId": shopping_list_id,
-            "item": {"clientId": client_id, "name": name, "count": count},
+            "item": {"clientId": str(uuid.uuid4()), "name": name, "count": count},
         }
         async with self._session.post(f"{BASE_URL}/api/shopping-list-add-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to add item: {resp.status}")
-            result = await resp.json()
-            if isinstance(result, dict):
-                result.setdefault("clientId", client_id)
-            return result
+            return await resp.json()
 
     async def remove_item(self, shopping_list_id: int, item_id: int) -> None:
         payload = {"shoppingListId": shopping_list_id, "itemId": item_id}
