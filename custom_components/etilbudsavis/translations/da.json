@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Log ind på eTilbudsavis",
-        "description": "Indtast din eTilbudsavis e-mailadresse. Du modtager en engangskode.",
+        "description": "Indtast din e-mailadresse. Du modtager en engangskode.",
         "data": {
           "email": "E-mailadresse"
         }
@@ -16,18 +16,19 @@
         }
       },
       "select_list": {
-        "title": "Vælg indkøbsliste",
-        "description": "Du har flere indkøbslister. Vælg den du vil synkronisere.",
+        "title": "Indkøbsliste",
+        "description": "Vælg den indkøbsliste du vil synkronisere, eller indtast dit liste-ID manuelt (find det via DevTools på etilbudsavis.dk).",
         "data": {
-          "shopping_list": "Indkøbsliste"
+          "shopping_list": "Vælg liste",
+          "shopping_list_id": "Indkøbsliste-ID"
         }
       }
     },
     "error": {
       "cannot_connect": "Kunne ikke oprette forbindelse til eTilbudsavis.",
-      "invalid_otp": "Forkert kode. Prøv igen.",
+      "invalid_otp": "Forkert kode — tjek din e-mail og prøv igen.",
       "no_shopping_list": "Ingen indkøbsliste fundet på denne konto.",
-      "unknown": "Ukendt fejl."
+      "unknown": "Ukendt fejl — tjek Home Assistant-loggen."
     },
     "abort": {
       "already_configured": "eTilbudsavis er allerede konfigureret."
