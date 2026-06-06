@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
+import urllib.parse
 from typing import Any
 
 import aiohttp
@@ -37,7 +38,6 @@ class EtilbudsavisClient:
             "user-agent": "Mozilla/5.0 (compatible; HomeAssistant/eTilbudsavis)",
         }
         if self._token:
-            import urllib.parse
             cookie_value = urllib.parse.quote(json.dumps({"token": self._token}))
             headers["Cookie"] = f"tjek-session={cookie_value}"
         return headers
@@ -45,7 +45,6 @@ class EtilbudsavisClient:
     # --- Auth ---
 
     async def auth_initialize(self, email: str) -> str:
-        """Step 1: Send OTP to email. Returns otpId."""
         payload = {"apiKey": API_KEY, "email": email}
         async with self._session.post(
             f"{BASE_URL}/api/auth-otp-initialize",
@@ -58,7 +57,6 @@ class EtilbudsavisClient:
             return data["otpId"]
 
     async def auth_finalize(self, otp_id: str, otp: str) -> str:
-        """Step 2: Verify OTP. Returns session token."""
         payload = {"apiKey": API_KEY, "otpId": otp_id, "otp": otp}
         async with self._session.post(
             f"{BASE_URL}/api/auth-otp-finalize",
@@ -77,19 +75,16 @@ class EtilbudsavisClient:
     # --- Shopping list ---
 
     async def get_shopping_lists(self) -> list[dict]:
-        """Get all shopping lists for the user."""
         key = self._make_key("shoppingLists", {})
         data = await self._rpc([key])
         return data[0].get("value", [])
 
     async def get_shopping_list_items(self, shopping_list_id: int) -> list[dict]:
-        """Get items in a shopping list."""
         key = self._make_key("shoppingListItems", {"shoppingListId": shopping_list_id})
         data = await self._rpc([key])
         return data[0].get("value", [])
 
     async def add_item(self, shopping_list_id: int, name: str, count: int = 1) -> dict:
-        """Add an item to a shopping list."""
         payload = {
             "shoppingListId": shopping_list_id,
             "item": {
@@ -108,7 +103,6 @@ class EtilbudsavisClient:
             return await resp.json()
 
     async def remove_item(self, shopping_list_id: int, item_id: int) -> None:
-        """Remove an item from a shopping list."""
         payload = {
             "shoppingListId": shopping_list_id,
             "itemId": item_id,
@@ -122,14 +116,13 @@ class EtilbudsavisClient:
                 raise EtilbudsavisApiError(f"Failed to remove item: {resp.status}")
 
     async def tick_item(self, shopping_list_id: int, item_id: int, ticked: bool) -> None:
-        """Tick/untick an item on the shopping list."""
         payload = {
             "shoppingListId": shopping_list_id,
             "itemId": item_id,
             "ticked": ticked,
         }
         async with self._session.post(
-            f"{AASE_URL}/api/shopping-list-tick-item",
+            f"{BASE_URL}/api/shopping-list-tick-item",
             json=payload,
             headers=self._headers,
         ) as resp:
@@ -151,7 +144,6 @@ class EtilbudsavisClient:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"RPC failed: {resp.status}")
             data = await resp.json()
-            # API kan returnere enten liste [{}] eller enkelt objekt {}
             if isinstance(data, dict):
                 return [data]
             return data
