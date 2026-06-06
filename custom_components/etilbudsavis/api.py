@@ -37,7 +37,8 @@ class EtilbudsavisClient:
             "user-agent": "Mozilla/5.0 (compatible; HomeAssistant/eTilbudsavis)",
         }
         if self._token:
-            cookie_value = json.dumps({"token": self._token})
+            import urllib.parse
+            cookie_value = urllib.parse.quote(json.dumps({"token": self._token}))
             headers["Cookie"] = f"tjek-session={cookie_value}"
         return headers
 
@@ -128,7 +129,7 @@ class EtilbudsavisClient:
             "ticked": ticked,
         }
         async with self._session.post(
-            f"{BASE_URL}/api/shopping-list-tick-item",
+            f"{AASE_URL}/api/shopping-list-tick-item",
             json=payload,
             headers=self._headers,
         ) as resp:
@@ -149,4 +150,8 @@ class EtilbudsavisClient:
         ) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"RPC failed: {resp.status}")
-            return await resp.json()
+            data = await resp.json()
+            # API kan returnere enten liste [{}] eller enkelt objekt {}
+            if isinstance(data, dict):
+                return [data]
+            return data
