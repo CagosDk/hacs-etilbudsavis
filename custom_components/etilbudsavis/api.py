@@ -71,14 +71,18 @@ class EtilbudsavisClient:
         return data[0].get("value", []) if data else []
 
     async def add_item(self, shopping_list_id: int, name: str, count: int = 1) -> dict:
+        client_id = str(uuid.uuid4())
         payload = {
             "shoppingListId": shopping_list_id,
-            "item": {"clientId": str(uuid.uuid4()), "name": name, "count": count},
+            "item": {"clientId": client_id, "name": name, "count": count},
         }
         async with self._session.post(f"{BASE_URL}/api/shopping-list-add-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to add item: {resp.status}")
-            return await resp.json()
+            result = await resp.json()
+            if isinstance(result, dict):
+                result.setdefault("clientId", client_id)
+            return result
 
     async def remove_item(self, shopping_list_id: int, item_id: int) -> None:
         payload = {"shoppingListId": shopping_list_id, "itemId": item_id}
@@ -86,19 +90,16 @@ class EtilbudsavisClient:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to remove item: {resp.status}")
 
-    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool, name: str | None = None) -> None:
+    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool) -> None:
         _now = datetime.now(timezone.utc)
         updated_at = _now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{_now.microsecond // 1000:03d}Z"
-        item: dict = {
-            "clientId": client_id,
-            "ticked": ticked,
-            "updatedAt": updated_at,
-        }
-        if name is not None:
-            item["name"] = name
         payload = {
             "shoppingListId": shopping_list_id,
-            "item": item,
+            "item": {
+                "clientId": client_id,
+                "ticked": ticked,
+                "updatedAt": updated_at,
+            },
         }
         async with self._session.post(f"{BASE_URL}/api/shopping-list-update-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
