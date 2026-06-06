@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, CONF_TOKEN, CONF_SHOPPING_LIST_ID
+from .const import DOMAIN, CONF_TOKEN, CONF_LISTS, CONF_SHOPPING_LIST_ID
 from .coordinator import EtilbudsavisCoordinator
 
 PLATFORMS = [Platform.TODO]
@@ -13,14 +13,30 @@ PLATFORMS = [Platform.TODO]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up eTilbudsavis from a config entry."""
-    coordinator = EtilbudsavisCoordinator(
-        hass=hass,
-        token=entry.data[CONF_TOKEN],
-        shopping_list_id=entry.data[CONF_SHOPPING_LIST_ID],
-    )
-    await coordinator.async_config_entry_first_refresh()
+    token = entry.data[CONF_TOKEN]
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    # Support both old format (single list) and new format (multiple lists)
+    shopping_lists = entry.data.get(CONF_LISTS)
+    if not shopping_lists:
+        # Migration from old single-list format
+        old_id = entry.data.get(CONF_SHOPPING_LIST_ID)
+        if old_id:
+            shopping_lists = [{"id": old_id, "name": "Indkøbsliste"}]
+        else:
+            shopping_lists = []
+
+    coordinators = {}
+    for sl in shopping_lists:
+        coordinator = EtilbudsavisCoordinator(
+            hass=hass,
+            token=token,
+            shopping_list_id=sl["id"],
+            list_name=sl.get("name", f"Liste {sl['id']}"),
+        )
+        await coordinator.async_config_entry_first_refresh()
+        coordinators[sl["id"]] = coordinator
+
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinators
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
