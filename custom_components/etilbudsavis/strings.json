@@ -1,0 +1,36 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Log ind på eTilbudsavis",
+        "description": "Indtast din eTilbudsavis e-mailadresse. Du modtager en engangskode.",
+        "data": {
+          "email": "E-mailadresse"
+        }
+      },
+      "otp": {
+        "title": "Bekræft din e-mail",
+        "description": "Indtast den 6-cifrede kode sendt til {email}.",
+        "data": {
+          "otp": "Engangskode"
+        }
+      },
+      "select_list": {
+        "title": "Vælg indkøbsliste",
+        "description": "Du har flere indkøbslister. Vælg den du vil synkronisere.",
+        "data": {
+          "shopping_list": "Indkøbsliste"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kunne ikke oprette forbindelse til eTilbudsavis.",
+      "invalid_otp": "Forkert kode. Prøv igen.",
+      "no_shopping_list": "Ingen indkøbsliste fundet på denne konto.",
+      "unknown": "Ukendt fejl."
+    },
+    "abort": {
+      "already_configured": "eTilbudsavis er allerede konfigureret."
+    }
+  }
+}
