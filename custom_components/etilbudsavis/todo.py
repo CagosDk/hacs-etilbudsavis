@@ -31,11 +31,14 @@ def _decode_uid(uid: str) -> tuple[int, str]:
 
 
 def _parse_summary(summary: str) -> tuple[int, str]:
-    """Extract count and name from '{N}x {name}', stripping any expiry prefix."""
+    """Extract count and name, stripping expiry prefix and trailing (note)."""
     match = re.search(r'(\d+)x\s+(.+)$', summary)
     if match:
-        return int(match.group(1)), match.group(2).strip()
-    return 1, summary.strip()
+        count = int(match.group(1))
+        name = re.sub(r'\s*\([^)]*\)$', '', match.group(2)).strip()
+        return count, name
+    name = re.sub(r'\s*\([^)]*\)$', '', summary).strip()
+    return 1, name
 
 
 def _expiry_prefix(offer: dict | None, now: datetime) -> str:
