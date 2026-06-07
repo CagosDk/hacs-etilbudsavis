@@ -94,8 +94,9 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
             prefix = _expiry_prefix(item.get("offer"), now)
 
             summary = f"{prefix}{count}x {name}"
-            desc_parts = [p for p in [short_desc, store] if p]
-            description = " · ".join(desc_parts) or None
+            if short_desc:
+                summary += f" ({short_desc})"
+            description = store or None
 
             result.append(TodoItem(
                 uid=_encode_uid(item),
