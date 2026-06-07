@@ -7,16 +7,15 @@ Synkroniser dine [eTilbudsavis](https://etilbudsavis.dk) indkøbslister med Home
 ## Funktioner
 
 - **Fuld synkronisering** — varer fra eTilbudsavis-appen vises automatisk i HA inden for 60 sekunder
-- **Tilføj varer fra HA** — skriv `3x Mælk` for at tilføje 3 stk., eller blot `Mælk` for 1 stk.
-- **Omdøb varer** — rediger et varenavn i HA og det opdateres i eTilbudsavis
-- **Slet varer** — fjern enkelt- eller flere varer ad gangen
-- **Sæt kryds** — afkrydsning synkroniseres øjeblikkeligt til eTilbudsavis
-- **Antal** — vises som `3x Mælk` direkte i listevisningen
-- **Noter** — eTilbudsavis-noter (f.eks. "ikke øko") vises i parentes bag varenavnet: `1x Mælk (ikke øko)`
+- **Antal** — vises som `3x Mælk` i listevisningen
+- **Noter** — eTilbudsavis-noter vises i parentes: `1x Mælk (øko)`
 - **Butiksnavn** — tilknyttet butik vises under varen
-- **Udløbne tilbud** — varer med et udløbet tilbud markeres tydeligt: `UDLØBET!!! 1x Mozzarellaost`
-- **Flere lister** — tilføj og synkroniser flere indkøbslister fra samme konto
-- **Re-login** — hvis sessionen udløber vises automatisk en ny login-dialog i HA
+- **Udløbne tilbud** — markeres tydeligt: `UDLØBET!!! 1x Mozzarellaost`
+- **Afkrydsning** — synkroniseres øjeblikkeligt til eTilbudsavis
+- **Tilføj varer** — skriv `Mælk` eller `3x Mælk` for at angive antal
+- **Omdøb og slet** — ændringer sendes øjeblikkeligt til eTilbudsavis
+- **Flere lister** — synkroniser flere indkøbslister fra samme konto
+- **Re-login** — automatisk ny login-dialog hvis sessionen udløber
 
 ## Installation via HACS
 
@@ -34,34 +33,33 @@ Synkroniser dine [eTilbudsavis](https://etilbudsavis.dk) indkøbslister med Home
 4. Indtast koden fra din e-mail
 5. Vælg hvilke indkøbslister du vil synkronisere
 
-For at tilføje flere lister bagefter: gentag trin 1–5 med samme e-mailadresse.
+For at tilføje flere lister: gentag opsætningen med samme e-mailadresse.
 
 ## Brug fra Home Assistant
 
 | Handling | Sådan gør du |
 |---|---|
-| Tilføj vare | Skriv varenavnet i feltet — fx `Mælk` eller `3x Mælk` |
-| Tilføj med antal | Skriv `{antal}x {navn}` — fx `2x Smør` |
+| Tilføj vare | Skriv `Mælk` eller `3x Mælk` for at angive antal |
 | Omdøb vare | Rediger varenavnet direkte i HA |
 | Slet vare | Marker og slet fra HA |
 | Afkryds vare | Sæt flueben — synkroniseres til eTilbudsavis |
 
-> **Bemærk:** Butik, noter og antal fra eTilbudsavis-appen er skrivebeskyttede i HA — de vises, men kan ikke redigeres herfra.
+> **Bemærk:** Butik, noter og antal fra eTilbudsavis-appen er skrivebeskyttede — de vises i HA, men kan ikke redigeres herfra.
 
 ## Versionshistorik
 
 ### v1.2.0
-- Antal (`3x Mælk`), noter (`(ikke øko)`) og butiksnavn vises i todo-listen
+- Antal, noter og butiksnavn vises i todo-listen
 - Udløbne tilbud markeres med `UDLØBET!!!`
 - Antal kan angives fra HA ved at skrive `{N}x {navn}`
 
 ### v1.1.0
-- Understøttelse af flere indkøbslister pr. konto
-- Re-auth flow: automatisk ny login-dialog når sessionen udløber
+- Flere indkøbslister pr. konto
+- Automatisk re-login når sessionen udløber
 - Omdøbning af varer fra HA
 
 ### v1.0.0
-- Første udgivelse: synkronisering af én indkøbsliste som HA todo-entitet
+- Første udgivelse
 
 ## Bemærk
 
