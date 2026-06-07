@@ -30,15 +30,14 @@ def _decode_uid(uid: str) -> tuple[int, str]:
     return int(parts[0]), parts[1] if len(parts) > 1 else ""
 
 
-def _parse_summary(summary: str) -> tuple[int, str]:
-    """Extract count and name, stripping expiry prefix and trailing (note)."""
+def _parse_summary(summary: str, short_desc: str = "") -> tuple[int, str]:
+    """Extract count and name, stripping expiry prefix and known shortDescription note."""
     match = re.search(r'(\d+)x\s+(.+)$', summary)
-    if match:
-        count = int(match.group(1))
-        name = re.sub(r'\s*\([^)]*\)$', '', match.group(2)).strip()
-        return count, name
-    name = re.sub(r'\s*\([^)]*\)$', '', summary).strip()
-    return 1, name
+    raw_name = match.group(2).strip() if match else summary.strip()
+    count = int(match.group(1)) if match else 1
+    if short_desc and raw_name.endswith(f"({short_desc})"):
+        raw_name = raw_name[:-(len(short_desc) + 2)].strip()
+    return count, raw_name
 
 
 def _expiry_prefix(offer: dict | None, now: datetime) -> str:
@@ -126,7 +125,6 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
     async def async_update_todo_item(self, item: TodoItem) -> None:
         item_id, client_id = _decode_uid(item.uid)
         ticked = item.status == TodoItemStatus.COMPLETED
-        new_count, new_name = _parse_summary(item.summary)
 
         current = next(
             (i for i in (self.coordinator.data or []) if i.get("id") == item_id),
@@ -134,6 +132,8 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
         )
         current_name = (current or {}).get("name", "")
         current_count = (current or {}).get("count") or 1
+        current_short_desc = (current or {}).get("shortDescription") or ""
+        new_count, new_name = _parse_summary(item.summary, current_short_desc)
 
         if new_name != current_name or new_count != current_count:
             await self.coordinator.client.remove_item(
