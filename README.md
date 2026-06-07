@@ -8,7 +8,7 @@ Synkroniser dine [eTilbudsavis](https://etilbudsavis.dk) indkøbslister med Home
 
 - **Fuld synkronisering** — varer fra eTilbudsavis-appen vises automatisk i HA inden for 60 sekunder
 - **Antal** — vises som `3x Mælk` i listevisningen
-- **Noter** — eTilbudsavis-noter vises i parentes: `1x Mælk (øko)`
+- **Noter** — eTilbudsavis-noter vises i parentes: `1x Mælk (øko)` — og kan også angives fra HA
 - **Butiksnavn** — tilknyttet butik vises under varen
 - **Udløbne tilbud** — markeres tydeligt: `UDLØBET!!! 1x Mozzarellaost`
 - **Afkrydsning** — synkroniseres øjeblikkeligt til eTilbudsavis
@@ -39,14 +39,20 @@ For at tilføje flere lister: gentag opsætningen med samme e-mailadresse.
 
 | Handling | Sådan gør du |
 |---|---|
-| Tilføj vare | Skriv `Mælk` eller `3x Mælk` for at angive antal |
+| Tilføj vare | Skriv `Mælk`, `3x Mælk` eller `Mælk (øko)` |
+| Tilføj med antal og note | `3x Mælk (øko)` — antal og note sendes til eTilbudsavis |
 | Omdøb vare | Rediger varenavnet direkte i HA |
+| Rediger note | Ændr teksten i parentesen — opdateres i eTilbudsavis |
 | Slet vare | Marker og slet fra HA |
 | Afkryds vare | Sæt flueben — synkroniseres til eTilbudsavis |
 
-> **Bemærk:** Butik, noter og antal fra eTilbudsavis-appen er skrivebeskyttede — de vises i HA, men kan ikke redigeres herfra.
+> **Bemærk:** Butiksnavn er skrivebeskyttet — det vises i HA, men sættes kun fra eTilbudsavis-appen.
 
 ## Versionshistorik
+
+### v1.3.0
+- Noter kan nu angives fra HA som `Mælk (øko)` og gemmes i eTilbudsavis
+- Noteredigering opdaterer eTilbudsavis direkte uden slet+opret
 
 ### v1.2.0
 - Antal, noter og butiksnavn vises i todo-listen
