@@ -70,12 +70,12 @@ class EtilbudsavisClient:
         data = await self._rpc([key])
         return data[0].get("value", []) if data else []
 
-    async def add_item(self, shopping_list_id: int, name: str, count: int = 1) -> dict:
+    async def add_item(self, shopping_list_id: int, name: str, count: int = 1, short_desc: str = "") -> dict:
         client_id = str(uuid.uuid4())
-        payload = {
-            "shoppingListId": shopping_list_id,
-            "item": {"clientId": client_id, "name": name, "count": count},
-        }
+        item: dict = {"clientId": client_id, "name": name, "count": count}
+        if short_desc:
+            item["shortDescription"] = short_desc
+        payload = {"shoppingListId": shopping_list_id, "item": item}
         async with self._session.post(f"{BASE_URL}/api/shopping-list-add-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to add item: {resp.status}")
@@ -90,17 +90,15 @@ class EtilbudsavisClient:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to remove item: {resp.status}")
 
-    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool) -> None:
+    async def tick_item(self, shopping_list_id: int, client_id: str, ticked: bool, count: int | None = None, short_desc: str | None = None) -> None:
         _now = datetime.now(timezone.utc)
         updated_at = _now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{_now.microsecond // 1000:03d}Z"
-        payload = {
-            "shoppingListId": shopping_list_id,
-            "item": {
-                "clientId": client_id,
-                "ticked": ticked,
-                "updatedAt": updated_at,
-            },
-        }
+        item: dict = {"clientId": client_id, "ticked": ticked, "updatedAt": updated_at}
+        if count is not None:
+            item["count"] = count
+        if short_desc is not None:
+            item["shortDescription"] = short_desc
+        payload = {"shoppingListId": shopping_list_id, "item": item}
         async with self._session.post(f"{BASE_URL}/api/shopping-list-update-item", json=payload, headers=self._headers) as resp:
             if not resp.ok:
                 raise EtilbudsavisApiError(f"Failed to tick item: {resp.status}")

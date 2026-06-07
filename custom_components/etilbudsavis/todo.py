@@ -28,14 +28,15 @@ def _decode_uid(uid: str) -> tuple[int, str]:
     return int(parts[0]), parts[1] if len(parts) > 1 else ""
 
 
-def _parse_summary(summary: str, short_desc: str = "") -> tuple[int, str]:
-    """Extract count and name, stripping expiry prefix and known shortDescription note."""
+def _parse_summary(summary: str) -> tuple[int, str, str]:
+    """Extract (count, name, short_desc) from '{N}x {name} (note)' format."""
     match = re.search(r'(\d+)x\s+(.+)$', summary)
-    raw_name = match.group(2).strip() if match else summary.strip()
+    raw = match.group(2).strip() if match else summary.strip()
     count = int(match.group(1)) if match else 1
-    if short_desc and raw_name.endswith(f"({short_desc})"):
-        raw_name = raw_name[:-(len(short_desc) + 2)].strip()
-    return count, raw_name
+    note_match = re.search(r'^(.*?)\s*\(([^)]+)\)$', raw)
+    if note_match:
+        return count, note_match.group(1).strip(), note_match.group(2).strip()
+    return count, raw, ""
 
 
 def _expiry_prefix(offer: dict | None, now: datetime) -> str:
@@ -104,9 +105,9 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
         return result
 
     async def async_create_todo_item(self, item: TodoItem) -> None:
-        count, name = _parse_summary(item.summary)
+        count, name, short_desc = _parse_summary(item.summary)
         await self.coordinator.client.add_item(
-            self.coordinator.shopping_list_id, name=name, count=count
+            self.coordinator.shopping_list_id, name=name, count=count, short_desc=short_desc
         )
         await self.coordinator.async_request_refresh()
 
@@ -119,22 +120,24 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
     async def async_update_todo_item(self, item: TodoItem) -> None:
         item_id, client_id = _decode_uid(item.uid)
         ticked = item.status == TodoItemStatus.COMPLETED
+        new_count, new_name, new_short_desc = _parse_summary(item.summary)
 
         current = next(
             (i for i in (self.coordinator.data or []) if i.get("id") == item_id),
             None,
         )
         current_name = (current or {}).get("name", "")
-        current_count = (current or {}).get("count") or 1
-        current_short_desc = (current or {}).get("shortDescription") or ""
-        new_count, new_name = _parse_summary(item.summary, current_short_desc)
 
-        if new_name != current_name or new_count != current_count:
+        if new_name != current_name:
+            # Kun navneændring kræver slet+opret
             await self.coordinator.client.remove_item(
                 self.coordinator.shopping_list_id, item_id=item_id
             )
             new_item = await self.coordinator.client.add_item(
-                self.coordinator.shopping_list_id, name=new_name, count=new_count
+                self.coordinator.shopping_list_id,
+                name=new_name,
+                count=new_count,
+                short_desc=new_short_desc,
             )
             if ticked:
                 new_client_id = new_item.get("clientId", "")
@@ -145,10 +148,13 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
                         ticked=True,
                     )
         else:
+            # Antal, note og afkrydsning kan opdateres direkte
             await self.coordinator.client.tick_item(
                 self.coordinator.shopping_list_id,
                 client_id=client_id,
                 ticked=ticked,
+                count=new_count,
+                short_desc=new_short_desc,
             )
 
         await self.coordinator.async_request_refresh()
