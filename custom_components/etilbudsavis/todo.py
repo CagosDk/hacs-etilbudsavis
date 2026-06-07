@@ -1,6 +1,9 @@
 """eTilbudsavis todo list entities."""
 from __future__ import annotations
 
+import re
+from datetime import datetime, timezone
+
 from homeassistant.components.todo import (
     TodoItem,
     TodoItemStatus,
@@ -15,6 +18,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import EtilbudsavisCoordinator
 
+_DANISH_DAYS = ["MANDAG", "TIRSDAG", "ONSDAG", "TORSDAG", "FREDAG", "LØRDAG", "SØNDAG"]
+
 
 def _encode_uid(item: dict) -> str:
     return f"{item['id']}|{item.get('clientId', '')}"
@@ -25,8 +30,34 @@ def _decode_uid(uid: str) -> tuple[int, str]:
     return int(parts[0]), parts[1] if len(parts) > 1 else ""
 
 
+def _parse_summary(summary: str) -> tuple[int, str]:
+    """Extract count and name from '{N}x {name}', stripping any expiry prefix."""
+    match = re.search(r'(\d+)x\s+(.+)$', summary)
+    if match:
+        return int(match.group(1)), match.group(2).strip()
+    return 1, summary.strip()
+
+
+def _expiry_prefix(offer: dict | None, now: datetime) -> str:
+    if not offer:
+        return ""
+    valid_until_str = offer.get("validUntil")
+    if not valid_until_str:
+        return ""
+    try:
+        valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    delta = (valid_until - now).days
+    day = _DANISH_DAYS[valid_until.weekday()]
+    if delta < 0:
+        return f"UDLØB {day}!!! "
+    if delta <= 2:
+        return f"UDLØBER {day}! "
+    return ""
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    """Set up one todo entity per shopping list."""
     coordinators: dict[int, EtilbudsavisCoordinator] = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([EtilbudsavisTodoList(coord) for coord in coordinators.values()])
 
@@ -48,24 +79,38 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
     @property
     def todo_items(self) -> list[TodoItem]:
         items = self.coordinator.data or []
+        now = datetime.now(timezone.utc)
         result = []
         for item in items:
             if not item.get("isActive", True):
                 continue
             ticked = item.get("ticked", False)
             status = TodoItemStatus.COMPLETED if ticked else TodoItemStatus.NEEDS_ACTION
-            store = (item.get("business") or {}).get("name")
+
+            count = item.get("count") or 1
+            name = item.get("name", "")
+            short_desc = item.get("shortDescription") or ""
+            store = (item.get("business") or {}).get("name") or ""
+            prefix = _expiry_prefix(item.get("offer"), now)
+
+            summary = f"{prefix}{count}x {name}"
+            desc_parts = [p for p in [short_desc, store] if p]
+            description = " · ".join(desc_parts) or None
+
             result.append(TodoItem(
                 uid=_encode_uid(item),
-                summary=item.get("name", ""),
+                summary=summary,
                 status=status,
-                description=store,
+                description=description,
             ))
         result.sort(key=lambda x: (x.status == TodoItemStatus.COMPLETED, x.summary.lower()))
         return result
 
     async def async_create_todo_item(self, item: TodoItem) -> None:
-        await self.coordinator.client.add_item(self.coordinator.shopping_list_id, name=item.summary)
+        count, name = _parse_summary(item.summary)
+        await self.coordinator.client.add_item(
+            self.coordinator.shopping_list_id, name=name, count=count
+        )
         await self.coordinator.async_request_refresh()
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:
@@ -77,21 +122,21 @@ class EtilbudsavisTodoList(CoordinatorEntity[EtilbudsavisCoordinator], TodoListE
     async def async_update_todo_item(self, item: TodoItem) -> None:
         item_id, client_id = _decode_uid(item.uid)
         ticked = item.status == TodoItemStatus.COMPLETED
+        new_count, new_name = _parse_summary(item.summary)
 
         current = next(
             (i for i in (self.coordinator.data or []) if i.get("id") == item_id),
             None,
         )
-        name_changed = bool(
-            current and item.summary and item.summary != current.get("name", "")
-        )
+        current_name = (current or {}).get("name", "")
+        current_count = (current or {}).get("count") or 1
 
-        if name_changed:
+        if new_name != current_name or new_count != current_count:
             await self.coordinator.client.remove_item(
                 self.coordinator.shopping_list_id, item_id=item_id
             )
             new_item = await self.coordinator.client.add_item(
-                self.coordinator.shopping_list_id, name=item.summary
+                self.coordinator.shopping_list_id, name=new_name, count=new_count
             )
             if ticked:
                 new_client_id = new_item.get("clientId", "")

@@ -39,11 +39,7 @@ class EtilbudsavisCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> list[dict]:
         try:
-            items = await self._client.get_shopping_list_items(self.shopping_list_id)
-            if items:
-                _LOGGER.debug("eTilbudsavis item fields: %s", list(items[0].keys()))
-                _LOGGER.debug("eTilbudsavis first item: %s", items[0])
-            return items
+            return await self._client.get_shopping_list_items(self.shopping_list_id)
         except EtilbudsavisAuthError as err:
             self.config_entry.async_start_reauth(self.hass)
             raise UpdateFailed("Autentifikation fejlede – log venligst ind igen") from err
