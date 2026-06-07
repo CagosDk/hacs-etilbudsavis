@@ -10,7 +10,7 @@ Synkroniser dine [eTilbudsavis](https://etilbudsavis.dk) indkøbslister med Home
 <img src="images/HA-todo-list.png" alt="Todo-liste i HA" width="400">
 
 ### I eTilbudsavis-appen
-<img src="images/eTilbudsavis%20liste.png" alt="Indkøbsliste i eTilbudsavis" width="600">
+<img src="images/eTilbudsavis-app.png" alt="Indkøbsliste i eTilbudsavis" width="600">
 
 ## Funktioner
 
@@ -46,7 +46,7 @@ Indtast din e-mailadresse — du modtager en 6-cifret engangskode.
 Vælg hvilke indkøbslister du vil synkronisere med Home Assistant.
 
 ### 3. Færdig
-<img src="images/tilf%C3%B8jet.png" alt="Opsætning gennemført" width="400">
+<img src="images/ha-setup-succes.png" alt="Opsætning gennemført" width="400">
 
 For at tilføje flere lister: gentag opsætningen med samme e-mailadresse.
 
