@@ -18,8 +18,6 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import EtilbudsavisCoordinator
 
-_DANISH_DAYS = ["MANDAG", "TIRSDAG", "ONSDAG", "TORSDAG", "FREDAG", "LØRDAG", "SØNDAG"]
-
 
 def _encode_uid(item: dict) -> str:
     return f"{item['id']}|{item.get('clientId', '')}"
@@ -50,12 +48,8 @@ def _expiry_prefix(offer: dict | None, now: datetime) -> str:
         valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
     except ValueError:
         return ""
-    delta = (valid_until - now).days
-    day = _DANISH_DAYS[valid_until.weekday()]
-    if delta < 0:
-        return f"UDLØB {day}!!! "
-    if delta <= 2:
-        return f"UDLØBER {day}! "
+    if (valid_until - now).days < 0:
+        return "UDLØBET!!! "
     return ""
 
 
