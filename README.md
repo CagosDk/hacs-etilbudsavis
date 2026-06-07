@@ -7,10 +7,10 @@ Synkroniser dine [eTilbudsavis](https://etilbudsavis.dk) indkøbslister med Home
 ## Sådan ser det ud
 
 ### I Home Assistant
-<img src="images/HA-todo-list.png" alt="Todo-liste i HA" width="400">
+<img src="images/ha-todo-list.png" alt="Todo-liste i HA" width="400">
 
 ### I eTilbudsavis-appen
-<img src="images/eTilbudsavis-app.png" alt="Indkøbsliste i eTilbudsavis" width="600">
+<img src="images/etilbudsavis-app.png" alt="Indkøbsliste i eTilbudsavis" width="600">
 
 ## Funktioner
 
