@@ -44,5 +44,19 @@
       "cannot_connect": "Could not connect to eTilbudsavis.",
       "unknown": "Unknown error — check the Home Assistant log."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage shopping lists",
+        "description": "Select which lists should appear in Home Assistant. Uncheck a list to remove it.",
+        "data": {
+          "shopping_lists": "Active shopping lists"
+        }
+      }
+    },
+    "error": {
+      "no_list_selected": "Please select at least one list."
+    }
   }
 }

@@ -44,5 +44,19 @@
       "cannot_connect": "Kunne ikke oprette forbindelse til eTilbudsavis.",
       "unknown": "Ukendt fejl — tjek Home Assistant-loggen."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Administrer indkøbslister",
+        "description": "Vælg hvilke lister der skal vises i Home Assistant. Fjern markeringen for at skjule en liste.",
+        "data": {
+          "shopping_lists": "Aktive indkøbslister"
+        }
+      }
+    },
+    "error": {
+      "no_list_selected": "Vælg mindst én liste."
+    }
   }
 }

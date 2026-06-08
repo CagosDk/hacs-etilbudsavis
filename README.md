@@ -65,6 +65,9 @@ For at tilføje flere lister: gentag opsætningen med samme e-mailadresse.
 
 ## Versionshistorik
 
+### v1.4.0
+- Lister kan nu fjernes fra Home Assistant via **Konfigurér**-knappen på integrationen
+
 ### v1.3.0
 - Noter kan nu angives fra HA som `Mælk (øko)` og gemmes i eTilbudsavis
 - Noteredigering opdaterer eTilbudsavis direkte uden slet+opret

@@ -22,6 +22,11 @@ _LOGGER = logging.getLogger(__name__)
 class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
 
+    @staticmethod
+    @config_entries.callback
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
+        return EtilbudsavisOptionsFlow(config_entry)
+
     def __init__(self) -> None:
         self._email: str = ""
         self._otp_id: str = ""
@@ -175,7 +180,7 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def _async_create_entry(self, shopping_lists: list[dict]):
+    async def _async_create_entry(self, shopping_lists: list[dict]) -> config_entries.FlowResult:
         existing = [
             e for e in self.hass.config_entries.async_entries(DOMAIN)
             if e.data.get(CONF_EMAIL) == self._email
@@ -196,4 +201,50 @@ class EtilbudsavisConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=f"eTilbudsavis \u2013 {self._email}",
             data={CONF_EMAIL: self._email, CONF_TOKEN: self._token, CONF_LISTS: shopping_lists},
+        )
+
+
+class EtilbudsavisOptionsFlow(config_entries.OptionsFlow):
+    """Administrer aktive indk\u00f8bslister \u2014 fjern lister der ikke l\u00e6ngere \u00f8nskes i HA."""
+
+    def __init__(self, entry: config_entries.ConfigEntry) -> None:
+        self._entry = entry
+
+    async def async_step_init(self, user_input=None) -> config_entries.FlowResult:
+        current_lists = self._entry.data.get(CONF_LISTS, [])
+        errors = {}
+
+        if user_input is not None:
+            selected_ids = user_input.get("shopping_lists", [])
+            if not isinstance(selected_ids, list):
+                selected_ids = [selected_ids]
+            if not selected_ids:
+                errors["base"] = "no_list_selected"
+            else:
+                kept = [sl for sl in current_lists if str(sl["id"]) in selected_ids]
+                self.hass.config_entries.async_update_entry(
+                    self._entry,
+                    data={**self._entry.data, CONF_LISTS: kept},
+                )
+                await self.hass.config_entries.async_reload(self._entry.entry_id)
+                return self.async_create_entry(title="", data={})
+
+        options = [
+            SelectOptionDict(value=str(sl["id"]), label=sl.get("name", f"Liste {sl['id']}"))
+            for sl in current_lists
+        ]
+        current_ids = [str(sl["id"]) for sl in current_lists]
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Required("shopping_lists", default=current_ids): SelectSelector(
+                    SelectSelectorConfig(
+                        options=options,
+                        multiple=True,
+                        mode=SelectSelectorMode.LIST,
+                    )
+                )
+            }),
+            errors=errors,
         )
